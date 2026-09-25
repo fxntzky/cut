@@ -1,0 +1,84 @@
+:root {
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering:
+    optimizeLegibility;
+  -webkit-font-smoothing:
+    antialiased;
+  -moz-osx-font-smoothing:
+    grayscale;
+
+  --cut-paper:
+    #f4f2ec;
+
+  --cut-ink:
+    #111313;
+
+  --cut-muted:
+    rgba(
+      17,
+      19,
+      19,
+      0.58
+    );
+
+  --cut-line:
+    rgba(
+      17,
+      19,
+      19,
+      0.16
+    );
+
+  --cut-line-strong:
+    rgba(
+      17,
+      19,
+      19,
+      0.34
+    );
+
+  --cut-accent:
+    #d9ff00;
+
+  color:
+    var(--cut-ink);
+  background:
+    var(--cut-paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background:
+    var(--cut-paper);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+::selection {
+  background:
+    var(--cut-accent);
+  color: #111313;
+}

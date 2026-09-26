@@ -14,8 +14,13 @@ import type {
 
 import type {
   CutComposition,
-  CutImageEffect,
 } from '../types/cut';
+
+import {
+  buildImagePasses,
+  getImageFilter,
+  TYPE_COLORS,
+} from '../utils/imageProcessingEngine';
 
 export interface ImagePanAvailability {
   x: boolean;
@@ -69,113 +74,6 @@ type WordStyle =
     '--cut-word-index': number;
   };
 
-type EffectLayerStyle =
-  CSSProperties & {
-    '--cut-effect-amount': string;
-    '--cut-effect-scale': string;
-    '--cut-effect-tone': string;
-  };
-
-const getEffectLayerStyle = (
-  effect: CutImageEffect
-): EffectLayerStyle => ({
-  '--cut-effect-amount': String(effect.amount / 100),
-  '--cut-effect-scale': `${effect.scale}px`,
-  '--cut-effect-tone': TYPE_COLORS[effect.tone],
-});
-
-const TYPE_COLORS = {
-  auto: 'var(--canvas-fg)',
-  yellow: '#d5b936',
-  violet: '#7664a8',
-  pink: '#c3728d',
-  red: '#b9534d',
-  blue: '#557f93',
-  green: '#687f5e',
-  orange: '#be7b49',
-} as const;
-
-const getImageFilter = (
-  composition: CutComposition
-): string => {
-  const exposure =
-    Math.max(
-      0.45,
-      (100 + composition.imageExposure) / 100
-    );
-
-  let brightness = exposure;
-  let contrast =
-    composition.imageContrast / 100;
-  let saturation =
-    composition.imageSaturation / 100;
-  let grayscale = 0;
-  const sepia = 0;
-
-  switch (composition.imageLook) {
-    case 'mono':
-      grayscale = 1;
-      contrast *= 1.08;
-      break;
-
-    case 'matte':
-      brightness *= 1.04;
-      contrast *= 0.88;
-      saturation *= 0.76;
-      break;
-
-    case 'hard':
-      contrast *= 1.5;
-      saturation *= 0.86;
-      break;
-
-    case 'faded':
-      brightness *= 1.08;
-      contrast *= 0.78;
-      saturation *= 0.62;
-      break;
-
-    case 'duotone':
-      grayscale = 1;
-      contrast *= 1.16;
-      break;
-
-    case 'threshold': {
-      grayscale = 1;
-      contrast *= 7.5;
-      const thresholdShift =
-        (50 - composition.imageThreshold) / 100;
-      brightness *=
-        Math.max(0.55, 1 + thresholdShift);
-      break;
-    }
-
-    case 'halftone':
-      grayscale = 0.9;
-      contrast *= 1.38;
-      saturation *= 0.55;
-      break;
-
-    case 'xerox':
-      grayscale = 1;
-      contrast *= 3.1;
-      saturation = 0;
-      brightness *= 1.02;
-      break;
-
-    default:
-      break;
-  }
-
-  return [
-    `brightness(${brightness.toFixed(3)})`,
-    `contrast(${contrast.toFixed(3)})`,
-    `saturate(${saturation.toFixed(3)})`,
-    `grayscale(${grayscale})`,
-    `sepia(${sepia})`,
-  ].join(' ');
-};
-
 const CutCanvas =
   forwardRef<
     HTMLDivElement,
@@ -221,18 +119,17 @@ const CutCanvas =
         );
 
       const subtitleColor =
-        composition.subtitleColor ===
-        'title'
-          ? TYPE_COLORS[
-              composition.typeColor
-            ]
-          : composition.subtitleColor ===
-              'ink'
-            ? 'var(--canvas-fg)'
-            : composition.subtitleColor ===
-                'muted'
-              ? 'color-mix(in srgb, var(--canvas-fg) 52%, transparent)'
-              : 'var(--canvas-muted)';
+        composition.subtitleColor === 'title'
+          ? TYPE_COLORS[composition.typeColor]
+          : composition.subtitleColor === 'black'
+            ? TYPE_COLORS.black
+            : composition.subtitleColor === 'white'
+              ? TYPE_COLORS.white
+              : 'color-mix(in srgb, var(--canvas-fg) 52%, transparent)';
+
+      const processingPasses = buildImagePasses(
+        composition.imageEffects,
+      );
 
       const canvasStyle: CanvasStyle = {
         '--cut-image-x':
@@ -593,18 +490,15 @@ const CutCanvas =
                       className='cut-canvas__effect-stack'
                       aria-hidden='true'
                     >
-                      {composition.imageEffects
-                        .filter((effect) => effect.enabled)
-                        .map((effect) => (
+                      {processingPasses
+                        .filter((pass) => pass.enabled)
+                        .map((pass) => (
                           <div
-                            key={effect.id}
-                            className={`cut-canvas__effect-layer cut-canvas__effect-layer--${effect.type}`}
-                            style={getEffectLayerStyle(effect)}
+                            key={pass.id}
+                            className={`cut-canvas__effect-layer cut-canvas__effect-layer--${pass.type}`}
+                            style={pass.style}
                           >
-                            {(effect.type === 'posterize' ||
-                              effect.type === 'xerox' ||
-                              effect.type === 'chromatic' ||
-                              effect.type === 'invert') && (
+                            {pass.needsImage && (
                               <img
                                 src={imageSrc}
                                 alt=''

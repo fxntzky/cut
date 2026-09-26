@@ -51,9 +51,9 @@ export type CutSubtitleStyle =
   | 'box';
 
 export type CutSubtitleColor =
-  | 'auto'
+  | 'black'
+  | 'white'
   | 'title'
-  | 'ink'
   | 'muted';
 
 
@@ -76,7 +76,13 @@ export type CutImageEffectType =
   | 'chromatic'
   | 'scanlines'
   | 'grain'
-  | 'invert';
+  | 'invert'
+  | 'dither'
+  | 'solarize'
+  | 'thermal'
+  | 'bloom'
+  | 'displace'
+  | 'pixelate';
 
 export interface CutImageEffect {
   id: string;
@@ -98,7 +104,8 @@ export type CutMotionStyle =
   | 'scale';
 
 export type CutTypeColor =
-  | 'auto'
+  | 'black'
+  | 'white'
   | 'yellow'
   | 'violet'
   | 'pink'
@@ -115,7 +122,8 @@ export type CutGridStyle =
   | 'asymmetric'
   | 'diagonal'
   | 'radial'
-  | 'golden';
+  | 'golden'
+  | 'nested';
 
 export type CutGraphicStyle =
   | 'none'
@@ -128,7 +136,32 @@ export type CutGraphicStyle =
   | 'frame'
   | 'polygon'
   | 'repeat'
-  | 'concentric';
+  | 'concentric'
+  | 'axis';
+
+export type CutCompositionSystem =
+  | 'free'
+  | 'modular'
+  | 'radial'
+  | 'axis'
+  | 'golden'
+  | 'repeat';
+
+
+export type CutProcessingPreset =
+  | 'custom'
+  | 'clean'
+  | 'brutal-print'
+  | 'acid-dither'
+  | 'newsroom'
+  | 'risograph'
+  | 'thermal'
+  | 'solarized'
+  | 'bleach'
+  | 'infrared'
+  | 'chroma-burn'
+  | 'bitmap'
+  | 'scan-error';
 
 export type ExportFormat =
   | 'png'
@@ -160,6 +193,7 @@ export interface CutComposition {
   imagePositionX: number;
   imagePositionY: number;
   imageLook: CutImageLook;
+  processingPreset: CutProcessingPreset;
   imageExposure: number;
   imageContrast: number;
   imageSaturation: number;
@@ -181,4 +215,5 @@ export interface CutComposition {
   graphicDensity: number;
   graphicScale: number;
   graphicRotation: number;
+  compositionSystem: CutCompositionSystem;
 }

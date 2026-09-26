@@ -36,6 +36,15 @@ import {
   saveCutProject,
 } from '../utils/projectFile';
 
+import {
+  generateCompositionVariations,
+} from '../utils/compositionVariations';
+
+import {
+  compositionSystems,
+  getCompositionSystem,
+} from '../data/compositionSystems';
+
 import CutCanvas from './CutCanvas';
 
 import type {
@@ -66,10 +75,10 @@ const initialComposition: CutComposition = {
     'deck',
 
   subtitleColor:
-    'auto',
+    'black',
 
   typeColor:
-    'auto',
+    'black',
 
   titleScale:
     100,
@@ -119,6 +128,9 @@ const initialComposition: CutComposition = {
   imageLook:
     'original',
 
+  processingPreset:
+    'clean',
+
   imageExposure:
     0,
 
@@ -156,7 +168,7 @@ const initialComposition: CutComposition = {
     'none',
 
   gridColor:
-    'auto',
+    'black',
 
   gridDensity:
     52,
@@ -181,6 +193,9 @@ const initialComposition: CutComposition = {
 
   graphicRotation:
     0,
+
+  compositionSystem:
+    'free',
 };
 
 type ZoomStyle =
@@ -226,6 +241,16 @@ const CutEditor = () => {
   ] = useState(false);
 
   const [
+    variations,
+    setVariations,
+  ] = useState<CutComposition[]>([]);
+
+  const [
+    activeVariation,
+    setActiveVariation,
+  ] = useState<number | null>(null);
+
+  const [
     imagePanAvailability,
     setImagePanAvailability,
   ] = useState<ImagePanAvailability>({
@@ -242,6 +267,8 @@ const CutEditor = () => {
   const handleCompositionChange = (
     next: Partial<CutComposition>
   ) => {
+    setActiveVariation(null);
+
     setComposition(
       (current) => {
         const candidate = {
@@ -315,43 +342,90 @@ const CutEditor = () => {
   };
 
   const handleRandomize = () => {
-    setComposition(
-      (current) =>
-        normalizeComposition({
-          ...current,
+    setActiveVariation(null);
 
-          layout:
-            getRandomLayout(
-              current.ratio,
-              current.title.length,
-              current.layout
-            ),
+    setComposition((current) => {
+      const availableSystems =
+        compositionSystems.filter(
+          (system) => system.id !== 'free'
+        );
 
-          titleStyle:
-            getRandomTitleStyle(
-              current.titleStyle
-            ),
+      const system =
+        availableSystems[
+          Math.floor(
+            Math.random() * availableSystems.length
+          )
+        ];
 
-          imagePositionX:
-            Math.floor(
-              30 +
-                Math.random() * 41
-            ),
+      const preset =
+        getCompositionSystem(system.id);
 
-          imagePositionY:
-            Math.floor(
-              25 +
-                Math.random() * 51
-            ),
+      return normalizeComposition({
+        ...current,
+        ...preset.patch,
+        compositionSystem: system.id,
 
-          titleScale:
-            Math.floor(
-              88 +
-                Math.random() * 25
-            ),
-        })
+        layout:
+          getRandomLayout(
+            current.ratio,
+            current.title.length,
+            current.layout
+          ),
+
+        titleStyle:
+          getRandomTitleStyle(
+            current.titleStyle
+          ),
+
+        imagePositionX:
+          Math.floor(
+            30 +
+              Math.random() * 41
+          ),
+
+        imagePositionY:
+          Math.floor(
+            25 +
+              Math.random() * 51
+          ),
+
+        titleScale:
+          Math.floor(
+            88 +
+              Math.random() * 25
+          ),
+      });
+    });
+
+    setSaveMessage('');
+  };
+
+  const handleGenerateVariations = () => {
+    const nextVariations =
+      generateCompositionVariations(
+        composition
+      );
+
+    setVariations(nextVariations);
+    setActiveVariation(0);
+    setComposition(nextVariations[0]);
+    setSaveMessage(
+      'Four composition variations generated.'
     );
+  };
 
+  const handleSelectVariation = (
+    index: number
+  ) => {
+    const selected = variations[index];
+
+    if (!selected) {
+      return;
+    }
+
+    setComposition(selected);
+    setActiveVariation(index);
+    setMotionPaused(false);
     setSaveMessage('');
   };
 
@@ -611,6 +685,18 @@ const CutEditor = () => {
         onRandomize={
           handleRandomize
         }
+        variationsCount={
+          variations.length
+        }
+        activeVariation={
+          activeVariation
+        }
+        onGenerateVariations={
+          handleGenerateVariations
+        }
+        onSelectVariation={
+          handleSelectVariation
+        }
         onToggleMotionPlayback={
           handleToggleMotionPlayback
         }
@@ -737,6 +823,18 @@ const CutEditor = () => {
         }
         onRandomize={
           handleRandomize
+        }
+        variationsCount={
+          variations.length
+        }
+        activeVariation={
+          activeVariation
+        }
+        onGenerateVariations={
+          handleGenerateVariations
+        }
+        onSelectVariation={
+          handleSelectVariation
         }
         onToggleMotionPlayback={
           handleToggleMotionPlayback

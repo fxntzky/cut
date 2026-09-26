@@ -13,8 +13,19 @@ import {
   imageEffectCatalog,
 } from '../data/imageEffects';
 
+import {
+  compositionSystems,
+  getCompositionSystem,
+} from '../data/compositionSystems';
+
+import {
+  createPresetEffects,
+  processingPresets,
+} from '../data/processingPresets';
+
 import type {
   CutComposition,
+  CutCompositionSystem,
   CutGraphicStyle,
   CutGridStyle,
   CutImageEffect,
@@ -56,6 +67,10 @@ interface CutControlsProps {
     event: ChangeEvent<HTMLInputElement>
   ) => void;
   onRandomize: () => void;
+  variationsCount: number;
+  activeVariation: number | null;
+  onGenerateVariations: () => void;
+  onSelectVariation: (index: number) => void;
   onToggleMotionPlayback: () => void;
   onSaveProject: () => void;
   onLoadProject: (
@@ -141,9 +156,9 @@ const subtitleColors: {
   id: CutSubtitleColor;
   label: string;
 }[] = [
-  { id: 'auto', label: 'Auto' },
+  { id: 'black', label: 'Black' },
+  { id: 'white', label: 'White' },
   { id: 'title', label: 'Title' },
-  { id: 'ink', label: 'Ink' },
   { id: 'muted', label: 'Muted' },
 ];
 
@@ -159,6 +174,7 @@ const gridStyles: {
   { id: 'diagonal', label: 'Diagonal' },
   { id: 'radial', label: 'Radial' },
   { id: 'golden', label: 'Golden' },
+  { id: 'nested', label: 'Nested' },
 ];
 
 const graphicStyles: {
@@ -176,6 +192,7 @@ const graphicStyles: {
   { id: 'polygon', label: 'Polygon' },
   { id: 'repeat', label: 'Repeat' },
   { id: 'concentric', label: 'Concentric' },
+  { id: 'axis', label: 'Axis' },
 ];
 
 const typeColors: {
@@ -184,9 +201,14 @@ const typeColors: {
   swatch: string;
 }[] = [
   {
-    id: 'auto',
-    label: 'Auto',
-    swatch: 'currentColor',
+    id: 'black',
+    label: 'Black',
+    swatch: '#111111',
+  },
+  {
+    id: 'white',
+    label: 'White',
+    swatch: '#f7f4ec',
   },
   {
     id: 'yellow',
@@ -235,6 +257,10 @@ const CutControls = ({
   onCompositionChange,
   onImageChange,
   onRandomize,
+  variationsCount,
+  activeVariation,
+  onGenerateVariations,
+  onSelectVariation,
   onToggleMotionPlayback,
   onSaveProject,
   onLoadProject,
@@ -254,6 +280,7 @@ const CutControls = ({
     patch: Partial<CutImageEffect>
   ) => {
     onCompositionChange({
+      processingPreset: 'custom',
       imageEffects: composition.imageEffects.map((effect) =>
         effect.id === id
           ? { ...effect, ...patch }
@@ -266,15 +293,17 @@ const CutControls = ({
     const id = `${type}-${Date.now()}-${composition.imageEffects.length}`;
 
     onCompositionChange({
+      processingPreset: 'custom',
       imageEffects: [
         ...composition.imageEffects,
         createImageEffect(type, id),
-      ].slice(-6),
+      ].slice(-8),
     });
   };
 
   const removeImageEffect = (id: string) => {
     onCompositionChange({
+      processingPreset: 'custom',
       imageEffects: composition.imageEffects.filter(
         (effect) => effect.id !== id
       ),
@@ -297,7 +326,21 @@ const CutControls = ({
     const next = [...composition.imageEffects];
     [next[index], next[target]] = [next[target], next[index]];
 
-    onCompositionChange({ imageEffects: next });
+    onCompositionChange({ processingPreset: 'custom', imageEffects: next });
+  };
+
+  const applyProcessingPreset = (presetId: CutComposition['processingPreset']) => {
+    const preset = processingPresets.find((item) => item.id === presetId);
+
+    if (!preset) {
+      return;
+    }
+
+    onCompositionChange({
+      processingPreset: preset.id,
+      ...preset.patch,
+      imageEffects: createPresetEffects(preset),
+    });
   };
 
   return (
@@ -316,7 +359,7 @@ const CutControls = ({
         </div>
 
         <span className='cut-controls__version'>
-          V1.8.1
+          V2.0.0
         </span>
       </header>
 
@@ -675,10 +718,7 @@ const CutControls = ({
                 <span
                   className='cut-color-options__swatch'
                   style={{
-                    background:
-                      color.id === 'auto'
-                        ? undefined
-                        : color.swatch,
+                    background: color.swatch,
                   }}
                 />
 
@@ -918,7 +958,7 @@ const CutControls = ({
 
       <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          05 / Image position
+          06 / Image position
         </span>
 
         <label
@@ -1006,8 +1046,39 @@ const CutControls = ({
 
       <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          06 / Image look
+          07 / Image look
         </span>
+
+        <div className='cut-control-group cut-processing-presets'>
+          <div className='cut-processing-presets__header'>
+            <span className='cut-control-group__label'>
+              Processing presets
+            </span>
+            <span>
+              {composition.processingPreset === 'custom'
+                ? 'CUSTOM'
+                : composition.processingPreset.toUpperCase()}
+            </span>
+          </div>
+
+          <div className='cut-processing-preset-options'>
+            {processingPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type='button'
+                className={
+                  composition.processingPreset === preset.id
+                    ? 'is-active'
+                    : undefined
+                }
+                title={preset.description}
+                onClick={() => applyProcessingPreset(preset.id)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className='cut-control-group'>
           <span className='cut-control-group__label'>
@@ -1026,6 +1097,7 @@ const CutControls = ({
                 }
                 onClick={() =>
                   onCompositionChange({
+                    processingPreset: 'custom',
                     imageLook: look.id,
                   })
                 }
@@ -1048,6 +1120,7 @@ const CutControls = ({
               value={composition.imageExposure}
               onChange={(event) =>
                 onCompositionChange({
+                  processingPreset: 'custom',
                   imageExposure: Number(event.target.value),
                 })
               }
@@ -1070,6 +1143,7 @@ const CutControls = ({
               value={composition.imageContrast}
               onChange={(event) =>
                 onCompositionChange({
+                  processingPreset: 'custom',
                   imageContrast: Number(event.target.value),
                 })
               }
@@ -1089,6 +1163,7 @@ const CutControls = ({
               value={composition.imageSaturation}
               onChange={(event) =>
                 onCompositionChange({
+                  processingPreset: 'custom',
                   imageSaturation: Number(event.target.value),
                 })
               }
@@ -1108,6 +1183,7 @@ const CutControls = ({
               value={composition.imageGrain}
               onChange={(event) =>
                 onCompositionChange({
+                  processingPreset: 'custom',
                   imageGrain: Number(event.target.value),
                 })
               }
@@ -1125,7 +1201,6 @@ const CutControls = ({
 
             <div className='cut-color-options'>
               {typeColors
-                .filter((color) => color.id !== 'auto')
                 .map((color) => (
                   <button
                     key={color.id}
@@ -1139,6 +1214,7 @@ const CutControls = ({
                     aria-label={`Image tone: ${color.label}`}
                     onClick={() =>
                       onCompositionChange({
+                        processingPreset: 'custom',
                         imageTone: color.id,
                       })
                     }
@@ -1166,6 +1242,7 @@ const CutControls = ({
               value={composition.imageThreshold}
               onChange={(event) =>
                 onCompositionChange({
+                  processingPreset: 'custom',
                   imageThreshold: Number(event.target.value),
                 })
               }
@@ -1187,6 +1264,7 @@ const CutControls = ({
               value={composition.imageHalftoneSize}
               onChange={(event) =>
                 onCompositionChange({
+                  processingPreset: 'custom',
                   imageHalftoneSize: Number(event.target.value),
                 })
               }
@@ -1203,7 +1281,7 @@ const CutControls = ({
             </span>
 
             <span>
-              {composition.imageEffects.length}/6
+              {composition.imageEffects.length}/8
             </span>
           </div>
 
@@ -1212,7 +1290,7 @@ const CutControls = ({
               <button
                 key={effect.id}
                 type='button'
-                disabled={composition.imageEffects.length >= 6}
+                disabled={composition.imageEffects.length >= 8}
                 title={effect.description}
                 onClick={() => addImageEffect(effect.id)}
               >
@@ -1298,7 +1376,11 @@ const CutControls = ({
                       effect.type === 'xerox' ||
                       effect.type === 'chromatic' ||
                       effect.type === 'scanlines' ||
-                      effect.type === 'grain') && (
+                      effect.type === 'grain' ||
+                      effect.type === 'dither' ||
+                      effect.type === 'bloom' ||
+                      effect.type === 'displace' ||
+                      effect.type === 'pixelate') && (
                       <label className='cut-range cut-effect-card__range'>
                         <span>Scale</span>
                         <input
@@ -1316,10 +1398,9 @@ const CutControls = ({
                       </label>
                     )}
 
-                    {effect.type === 'duotone' && (
+                    {(effect.type === 'duotone' || effect.type === 'thermal') && (
                       <div className='cut-effect-card__tones'>
                         {typeColors
-                          .filter((color) => color.id !== 'auto')
                           .map((color) => (
                             <button
                               key={color.id}
@@ -1356,6 +1437,7 @@ const CutControls = ({
           className='cut-image-reset'
           onClick={() =>
             onCompositionChange({
+              processingPreset: 'clean',
               imageLook: 'original',
               imageExposure: 0,
               imageContrast: 100,
@@ -1363,6 +1445,7 @@ const CutControls = ({
               imageGrain: 0,
               imageThreshold: 52,
               imageHalftoneSize: 6,
+              imageTone: 'black',
               imageEffects: [],
             })
           }
@@ -1371,13 +1454,13 @@ const CutControls = ({
         </button>
 
         <p>
-          Base treatment + reorderable effect stack. Up to six passes.
+          Preset recipes + reorderable pass stack. Up to eight passes.
         </p>
       </div>
 
       <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          07 / Motion
+          08 / Motion
         </span>
 
         <div className='cut-control-group'>
@@ -1499,9 +1582,86 @@ const CutControls = ({
         </p>
       </div>
 
+      <div className='cut-controls__section cut-controls__section--left cut-controls__section--systems'>
+        <span className='cut-controls__section-label'>
+          03 / Composition system
+        </span>
+
+        <div className='cut-control-group'>
+          <span className='cut-control-group__label'>
+            Relationship
+          </span>
+
+          <div className='cut-system-options'>
+            {compositionSystems.map((system) => (
+              <button
+                key={system.id}
+                type='button'
+                className={
+                  composition.compositionSystem === system.id
+                    ? 'is-active'
+                    : undefined
+                }
+                title={system.description}
+                onClick={() => {
+                  const preset = getCompositionSystem(
+                    system.id as CutCompositionSystem
+                  );
+
+                  onCompositionChange({
+                    ...preset.patch,
+                    compositionSystem: system.id,
+                  });
+                }}
+              >
+                {system.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className='cut-variations'>
+          <div className='cut-variations__top'>
+            <span className='cut-control-group__label'>
+              Variations
+            </span>
+
+            <button
+              type='button'
+              className='cut-variations__generate'
+              onClick={onGenerateVariations}
+            >
+              GENERATE SET
+            </button>
+          </div>
+
+          <div className='cut-variations__slots'>
+            {['A', 'B', 'C', 'D'].map((label, index) => (
+              <button
+                key={label}
+                type='button'
+                disabled={variationsCount < 4}
+                className={
+                  activeVariation === index
+                    ? 'is-active'
+                    : undefined
+                }
+                onClick={() => onSelectVariation(index)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <p>
+          Systems bind grid and geometry. Variations keep the same content and treatment while rebuilding the composition.
+        </p>
+      </div>
+
       <div className='cut-controls__section cut-controls__section--left'>
         <span className='cut-controls__section-label'>
-          03 / Grid system
+          04 / Grid system
         </span>
 
         <div className='cut-control-group'>
@@ -1522,6 +1682,7 @@ const CutControls = ({
                 onClick={() =>
                   onCompositionChange({
                     gridStyle: grid.id,
+                    compositionSystem: 'free',
                   })
                 }
               >
@@ -1555,10 +1716,7 @@ const CutControls = ({
                 <span
                   className='cut-color-options__swatch'
                   style={{
-                    background:
-                      color.id === 'auto'
-                        ? undefined
-                        : color.swatch,
+                    background: color.swatch,
                   }}
                 />
                 <span>{color.label}</span>
@@ -1630,7 +1788,7 @@ const CutControls = ({
 
       <div className='cut-controls__section cut-controls__section--left'>
         <span className='cut-controls__section-label'>
-          04 / Geometry
+          05 / Geometry
         </span>
 
         <div className='cut-control-group'>
@@ -1653,6 +1811,7 @@ const CutControls = ({
                   onCompositionChange({
                     graphicStyle:
                       graphic.id,
+                    compositionSystem: 'free',
                   })
                 }
               >
@@ -1692,10 +1851,7 @@ const CutControls = ({
                 <span
                   className='cut-color-options__swatch'
                   style={{
-                    background:
-                      color.id === 'auto'
-                        ? undefined
-                        : color.swatch,
+                    background: color.swatch,
                   }}
                 />
 
@@ -1792,7 +1948,7 @@ const CutControls = ({
 
       <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          08 / Project
+          09 / Project
         </span>
 
         <div className='cut-project-actions'>
@@ -1821,7 +1977,7 @@ const CutControls = ({
 
       <div className='cut-controls__section cut-controls__section--right cut-controls__section--export'>
         <span className='cut-controls__section-label'>
-          09 / Output
+          10 / Output
         </span>
 
         <div className='cut-output-group'>

@@ -11,6 +11,7 @@ import type {
 import {
   getRandomLayout,
   getRandomTitleStyle,
+  getValidLayouts,
 } from '../data/layouts';
 
 import type {
@@ -27,6 +28,10 @@ import {
 } from '../utils/prepareImage';
 
 import CutCanvas from './CutCanvas';
+
+import type {
+  ImagePanAvailability,
+} from './CutCanvas';
 import CutControls from './CutControls';
 
 const initialComposition: CutComposition = {
@@ -48,11 +53,107 @@ const initialComposition: CutComposition = {
   titleStyle:
     'massive',
 
+  subtitleStyle:
+    'deck',
+
+  subtitleColor:
+    'auto',
+
+  typeColor:
+    'auto',
+
+  titleScale:
+    100,
+
+  autoFitTitle:
+    true,
+
+  titleTracking:
+    -7,
+
+  titleLineHeight:
+    83,
+
+  titleWidth:
+    100,
+
+  titleAlign:
+    'left',
+
+  titleCase:
+    'auto',
+
+  subtitleScale:
+    100,
+
+  subtitleTracking:
+    0,
+
+  subtitleLineHeight:
+    125,
+
+  subtitleWidth:
+    100,
+
+  subtitleAlign:
+    'left',
+
+  subtitleMaxLines:
+    4,
+
   imagePositionX:
     50,
 
   imagePositionY:
     50,
+
+  imageLook:
+    'original',
+
+  imageExposure:
+    0,
+
+  imageContrast:
+    100,
+
+  imageSaturation:
+    100,
+
+  imageGrain:
+    0,
+
+  imageTone:
+    'yellow',
+
+  imageThreshold:
+    52,
+
+  imageHalftoneSize:
+    6,
+
+  motionMode:
+    'static',
+
+  motionStyle:
+    'reveal',
+
+  motionDuration:
+    6,
+
+  graphicStyle:
+    'none',
+
+  graphicColor:
+    'yellow',
+
+  graphicDensity:
+    50,
+
+  graphicScale:
+    50,
+
+  graphicRotation:
+    0,
 };
 
 type ZoomStyle =
@@ -90,6 +191,19 @@ const CutEditor = () => {
     setZoom,
   ] = useState(100);
 
+  const [
+    motionPaused,
+    setMotionPaused,
+  ] = useState(false);
+
+  const [
+    imagePanAvailability,
+    setImagePanAvailability,
+  ] = useState<ImagePanAvailability>({
+    x: false,
+    y: false,
+  });
+
   const canvasRef =
     useRef<HTMLDivElement>(null);
 
@@ -100,11 +214,37 @@ const CutEditor = () => {
     next: Partial<CutComposition>
   ) => {
     setComposition(
-      (current) => ({
-        ...current,
-        ...next,
-      })
+      (current) => {
+        const candidate = {
+          ...current,
+          ...next,
+        };
+
+        const validLayouts =
+          getValidLayouts(
+            candidate.ratio,
+            candidate.title.length
+          );
+
+        if (
+          !validLayouts.includes(
+            candidate.layout
+          )
+        ) {
+          candidate.layout =
+            validLayouts[0];
+        }
+
+        return candidate;
+      }
     );
+
+    if (
+      next.motionMode ||
+      next.motionStyle
+    ) {
+      setMotionPaused(false);
+    }
 
     setSaveMessage('');
   };
@@ -173,10 +313,46 @@ const CutEditor = () => {
             25 +
               Math.random() * 51
           ),
+
+        titleScale:
+          Math.floor(
+            88 +
+              Math.random() * 25
+          ),
       })
     );
 
     setSaveMessage('');
+  };
+
+  const withFrozenMotion = async (
+    task: () => Promise<void>
+  ) => {
+    const canvas =
+      canvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    canvas.classList.add(
+      'cut-canvas--exporting'
+    );
+
+    await new Promise<void>(
+      (resolve) =>
+        requestAnimationFrame(
+          () => resolve()
+        )
+    );
+
+    try {
+      await task();
+    } finally {
+      canvas.classList.remove(
+        'cut-canvas--exporting'
+      );
+    }
   };
 
   const handleSavePoster = async () => {
@@ -190,9 +366,12 @@ const CutEditor = () => {
     try {
       setIsExporting(true);
 
-      await exportArtwork(
-        canvasRef.current,
-        'png'
+      await withFrozenMotion(
+        () =>
+          exportArtwork(
+            canvasRef.current!,
+            'png'
+          )
       );
 
       setSaveMessage(
@@ -225,9 +404,12 @@ const CutEditor = () => {
     try {
       setIsExporting(true);
 
-      await exportArtwork(
-        canvasRef.current,
-        format
+      await withFrozenMotion(
+        () =>
+          exportArtwork(
+            canvasRef.current!,
+            format
+          )
       );
     } catch (error) {
       console.error(
@@ -242,6 +424,20 @@ const CutEditor = () => {
       setIsExporting(false);
     }
   };
+
+  const handleToggleMotionPlayback =
+    () => {
+      if (
+        composition.motionMode ===
+        'static'
+      ) {
+        return;
+      }
+
+      setMotionPaused(
+        (current) => !current
+      );
+    };
 
   const setSafeZoom = (
     nextZoom: number
@@ -344,6 +540,12 @@ const CutEditor = () => {
         saveMessage={
           saveMessage
         }
+        motionPaused={
+          motionPaused
+        }
+        imagePanAvailability={
+          imagePanAvailability
+        }
         onCompositionChange={
           handleCompositionChange
         }
@@ -352,6 +554,9 @@ const CutEditor = () => {
         }
         onRandomize={
           handleRandomize
+        }
+        onToggleMotionPlayback={
+          handleToggleMotionPlayback
         }
         onSavePoster={
           handleSavePoster
@@ -371,6 +576,11 @@ const CutEditor = () => {
             {composition.layout.toUpperCase()}
             {' / '}
             {composition.ratio}
+            {' / '}
+            {composition.motionMode ===
+            'loop'
+              ? `${composition.motionStyle.toUpperCase()} / ${composition.motionDuration}S`
+              : 'STATIC'}
           </span>
         </div>
 
@@ -389,6 +599,12 @@ const CutEditor = () => {
               }
               imageSrc={
                 imageSrc
+              }
+              motionPaused={
+                motionPaused
+              }
+              onImagePanAvailabilityChange={
+                setImagePanAvailability
               }
             />
           </div>

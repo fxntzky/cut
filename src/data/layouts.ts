@@ -100,6 +100,30 @@ export const titleStyles: TitleStyleDefinition[] = [
     id: 'lowercase',
     label: 'Lower',
   },
+  {
+    id: 'wide',
+    label: 'Wide',
+  },
+  {
+    id: 'boxed',
+    label: 'Boxed',
+  },
+  {
+    id: 'compressed',
+    label: 'Compressed',
+  },
+  {
+    id: 'tall',
+    label: 'Tall',
+  },
+  {
+    id: 'label',
+    label: 'Label',
+  },
+  {
+    id: 'banner',
+    label: 'Banner',
+  },
 ];
 
 const ratioPreference: Record<
@@ -111,10 +135,9 @@ const ratioPreference: Record<
     'offset',
     'frame',
     'headline',
-    'split',
     'bleed',
     'column',
-    'sidebar',
+    'split',
   ],
 
   '4:5': [
@@ -124,7 +147,6 @@ const ratioPreference: Record<
     'frame',
     'headline',
     'column',
-    'sidebar',
     'split',
   ],
 
@@ -144,9 +166,6 @@ const ratioPreference: Record<
     'headline',
     'offset',
     'frame',
-    'column',
-    'sidebar',
-    'split',
   ],
 };
 
@@ -154,13 +173,20 @@ export const getValidLayouts = (
   ratio: CutRatio,
   titleLength: number
 ): CutLayout[] => {
-  const candidates =
+  let candidates =
     ratioPreference[ratio];
 
   if (titleLength > 44) {
-    return candidates.filter(
+    candidates = candidates.filter(
       (layout) =>
         layout !== 'poster'
+    );
+  }
+
+  if (titleLength > 62) {
+    candidates = candidates.filter(
+      (layout) =>
+        layout !== 'headline'
     );
   }
 

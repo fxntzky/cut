@@ -54,6 +54,10 @@ type CanvasStyle =
     '--cut-subtitle-width': string;
     '--cut-subtitle-align': string;
     '--cut-subtitle-lines': string;
+    '--cut-grid-color': string;
+    '--cut-grid-spacing': string;
+    '--cut-grid-opacity': string;
+    '--cut-grid-rotation': string;
     '--cut-graphic-color': string;
     '--cut-graphic-spacing': string;
     '--cut-graphic-scale': string;
@@ -275,6 +279,16 @@ const CutCanvas =
           composition.subtitleAlign,
         '--cut-subtitle-lines':
           String(composition.subtitleMaxLines),
+        '--cut-grid-color':
+          TYPE_COLORS[
+            composition.gridColor
+          ],
+        '--cut-grid-spacing':
+          `${Math.round(72 - ((composition.gridDensity - 10) / 90) * 58)}px`,
+        '--cut-grid-opacity':
+          String(composition.gridOpacity / 100),
+        '--cut-grid-rotation':
+          `${composition.gridRotation}deg`,
         '--cut-graphic-color':
           TYPE_COLORS[
             composition.graphicColor
@@ -529,7 +543,8 @@ const CutCanvas =
             `cut-canvas--type-${composition.typeColor}`,
             `cut-canvas--title-case-${composition.titleCase}`,
             `cut-canvas--image-${composition.imageLook}`,
-            `cut-canvas--graphic-${composition.graphicStyle}`,
+            `cut-canvas--grid-${composition.gridStyle}`,
+            `cut-canvas--graphic-${composition.graphicStyle}`, 
             composition.motionMode ===
             'loop'
               ? 'cut-canvas--motion-loop'
@@ -610,12 +625,23 @@ const CutCanvas =
               )}
             </div>
 
+            {composition.gridStyle !==
+              'none' && (
+              <div
+                className='cut-canvas__grid'
+                aria-hidden='true'
+              />
+            )}
+
             {composition.graphicStyle !==
               'none' && (
               <div
                 className='cut-canvas__graphic'
                 aria-hidden='true'
-              />
+              >
+                <span />
+                <i />
+              </div>
             )}
 
             <div className='cut-canvas__copy'>

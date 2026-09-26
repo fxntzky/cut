@@ -31,6 +31,11 @@ import {
   normalizeComposition,
 } from '../utils/constraints';
 
+import {
+  loadCutProject,
+  saveCutProject,
+} from '../utils/projectFile';
+
 import CutCanvas from './CutCanvas';
 
 import type {
@@ -146,6 +151,21 @@ const initialComposition: CutComposition = {
 
   motionDuration:
     6,
+
+  gridStyle:
+    'none',
+
+  gridColor:
+    'auto',
+
+  gridDensity:
+    52,
+
+  gridOpacity:
+    28,
+
+  gridRotation:
+    0,
 
   graphicStyle:
     'none',
@@ -365,42 +385,6 @@ const CutEditor = () => {
     }
   };
 
-  const handleSavePoster = async () => {
-    if (
-      !canvasRef.current ||
-      isExporting
-    ) {
-      return;
-    }
-
-    try {
-      setIsExporting(true);
-
-      await withFrozenMotion(
-        () =>
-          exportArtwork(
-            canvasRef.current!,
-            'png'
-          )
-      );
-
-      setSaveMessage(
-        'Poster downloaded as PNG.'
-      );
-    } catch (error) {
-      console.error(
-        'CUT poster export failed:',
-        error
-      );
-
-      setSaveMessage(
-        'Could not download the poster.'
-      );
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const handleExport = async (
     format: ExportFormat
   ) => {
@@ -432,6 +416,67 @@ const CutEditor = () => {
       );
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleSaveProject = () => {
+    try {
+      saveCutProject(
+        composition,
+        imageSrc
+      );
+
+      setSaveMessage(
+        'Project downloaded as .cut.json.'
+      );
+    } catch (error) {
+      console.error(
+        'CUT project save failed:',
+        error
+      );
+
+      setSaveMessage(
+        'Could not save this project.'
+      );
+    }
+  };
+
+  const handleLoadProject = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const project =
+        await loadCutProject(file);
+
+      setComposition(
+        normalizeComposition(
+          project.composition
+        )
+      );
+      setImageSrc(
+        project.imageSrc
+      );
+      setMotionPaused(false);
+      setSaveMessage(
+        'Project loaded.'
+      );
+    } catch (error) {
+      console.error(
+        'CUT project load failed:',
+        error
+      );
+
+      setSaveMessage(
+        'Could not load this CUT project.'
+      );
+    } finally {
+      event.target.value = '';
     }
   };
 
@@ -541,6 +586,7 @@ const CutEditor = () => {
   return (
     <main className='cut-editor'>
       <CutControls
+        side='left'
         composition={
           composition
         }
@@ -568,8 +614,11 @@ const CutEditor = () => {
         onToggleMotionPlayback={
           handleToggleMotionPlayback
         }
-        onSavePoster={
-          handleSavePoster
+        onSaveProject={
+          handleSaveProject
+        }
+        onLoadProject={
+          handleLoadProject
         }
         onExport={
           handleExport
@@ -662,6 +711,46 @@ const CutEditor = () => {
           </button>
         </div>
       </section>
+
+      <CutControls
+        side='right'
+        composition={
+          composition
+        }
+        isExporting={
+          isExporting
+        }
+        saveMessage={
+          saveMessage
+        }
+        motionPaused={
+          motionPaused
+        }
+        imagePanAvailability={
+          imagePanAvailability
+        }
+        onCompositionChange={
+          handleCompositionChange
+        }
+        onImageChange={
+          handleImageChange
+        }
+        onRandomize={
+          handleRandomize
+        }
+        onToggleMotionPlayback={
+          handleToggleMotionPlayback
+        }
+        onSaveProject={
+          handleSaveProject
+        }
+        onLoadProject={
+          handleLoadProject
+        }
+        onExport={
+          handleExport
+        }
+      />
     </main>
   );
 };

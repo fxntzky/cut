@@ -16,6 +16,7 @@ import {
 import type {
   CutComposition,
   CutGraphicStyle,
+  CutGridStyle,
   CutImageEffect,
   CutImageEffectType,
   CutImageLook,
@@ -42,6 +43,7 @@ import {
 } from '../utils/constraints';
 
 interface CutControlsProps {
+  side: 'left' | 'right';
   composition: CutComposition;
   isExporting: boolean;
   saveMessage: string;
@@ -55,7 +57,10 @@ interface CutControlsProps {
   ) => void;
   onRandomize: () => void;
   onToggleMotionPlayback: () => void;
-  onSavePoster: () => void;
+  onSaveProject: () => void;
+  onLoadProject: (
+    event: ChangeEvent<HTMLInputElement>
+  ) => void;
   onExport: (
     format: ExportFormat
   ) => void;
@@ -142,15 +147,35 @@ const subtitleColors: {
   { id: 'muted', label: 'Muted' },
 ];
 
+const gridStyles: {
+  id: CutGridStyle;
+  label: string;
+}[] = [
+  { id: 'none', label: 'None' },
+  { id: 'modular', label: 'Modular' },
+  { id: 'columns', label: 'Columns' },
+  { id: 'twelve', label: '12 col' },
+  { id: 'asymmetric', label: 'Asym.' },
+  { id: 'diagonal', label: 'Diagonal' },
+  { id: 'radial', label: 'Radial' },
+  { id: 'golden', label: 'Golden' },
+];
+
 const graphicStyles: {
   id: CutGraphicStyle;
   label: string;
 }[] = [
   { id: 'none', label: 'None' },
-  { id: 'grid', label: 'Grid' },
-  { id: 'radial', label: 'Radial' },
-  { id: 'bars', label: 'Bars' },
-  { id: 'dots', label: 'Dots' },
+  { id: 'line', label: 'Line' },
+  { id: 'block', label: 'Block' },
+  { id: 'circle', label: 'Circle' },
+  { id: 'ring', label: 'Ring' },
+  { id: 'arc', label: 'Arc' },
+  { id: 'cross', label: 'Cross' },
+  { id: 'frame', label: 'Frame' },
+  { id: 'polygon', label: 'Polygon' },
+  { id: 'repeat', label: 'Repeat' },
+  { id: 'concentric', label: 'Concentric' },
 ];
 
 const typeColors: {
@@ -201,6 +226,7 @@ const typeColors: {
 ];
 
 const CutControls = ({
+  side,
   composition,
   isExporting,
   saveMessage,
@@ -210,7 +236,8 @@ const CutControls = ({
   onImageChange,
   onRandomize,
   onToggleMotionPlayback,
-  onSavePoster,
+  onSaveProject,
+  onLoadProject,
   onExport,
 }: CutControlsProps) => {
   const validLayouts =
@@ -274,24 +301,26 @@ const CutControls = ({
   };
 
   return (
-    <aside className='cut-controls'>
+    <aside className={`cut-controls cut-controls--${side}`}>
       <header className='cut-controls__header'>
         <div>
           <p className='cut-controls__eyebrow'>
-            Algorithmic editorial tool
+            {side === 'left'
+              ? 'Algorithmic editorial tool'
+              : 'Treatment / output'}
           </p>
 
           <h1>
-            CUT
+            {side === 'left' ? 'CUT' : 'TOOLS'}
           </h1>
         </div>
 
         <span className='cut-controls__version'>
-          V1.7.0
+          V1.8.1
         </span>
       </header>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--left'>
         <span className='cut-controls__section-label'>
           01 / Content
         </span>
@@ -345,7 +374,7 @@ const CutControls = ({
         </label>
       </div>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--left'>
         <span className='cut-controls__section-label'>
           02 / Composition
         </span>
@@ -887,9 +916,9 @@ const CutControls = ({
         </button>
       </div>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          03 / Image position
+          05 / Image position
         </span>
 
         <label
@@ -975,9 +1004,9 @@ const CutControls = ({
         </label>
       </div>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          04 / Image look
+          06 / Image look
         </span>
 
         <div className='cut-control-group'>
@@ -1346,9 +1375,9 @@ const CutControls = ({
         </p>
       </div>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          05 / Motion
+          07 / Motion
         </span>
 
         <div className='cut-control-group'>
@@ -1470,14 +1499,143 @@ const CutControls = ({
         </p>
       </div>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--left'>
         <span className='cut-controls__section-label'>
-          06 / Graphics
+          03 / Grid system
         </span>
 
         <div className='cut-control-group'>
           <span className='cut-control-group__label'>
-            Primitive
+            Structure
+          </span>
+
+          <div className='cut-grid-options'>
+            {gridStyles.map((grid) => (
+              <button
+                key={grid.id}
+                type='button'
+                className={
+                  composition.gridStyle === grid.id
+                    ? 'is-active'
+                    : undefined
+                }
+                onClick={() =>
+                  onCompositionChange({
+                    gridStyle: grid.id,
+                  })
+                }
+              >
+                {grid.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className='cut-control-group'>
+          <span className='cut-control-group__label'>
+            Grid color
+          </span>
+
+          <div className='cut-color-options'>
+            {typeColors.map((color) => (
+              <button
+                key={color.id}
+                type='button'
+                disabled={composition.gridStyle === 'none'}
+                className={
+                  composition.gridColor === color.id
+                    ? 'is-active'
+                    : undefined
+                }
+                title={color.label}
+                onClick={() =>
+                  onCompositionChange({ gridColor: color.id })
+                }
+              >
+                <span
+                  className='cut-color-options__swatch'
+                  style={{
+                    background:
+                      color.id === 'auto'
+                        ? undefined
+                        : color.swatch,
+                  }}
+                />
+                <span>{color.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className='cut-type-grid'>
+          <label className='cut-range'>
+            <span>Density</span>
+            <input
+              type='range'
+              min='10'
+              max='100'
+              step='1'
+              disabled={composition.gridStyle === 'none'}
+              value={composition.gridDensity}
+              onChange={(event) =>
+                onCompositionChange({
+                  gridDensity: Number(event.target.value),
+                })
+              }
+            />
+            <output>{composition.gridDensity}</output>
+          </label>
+
+          <label className='cut-range'>
+            <span>Opacity</span>
+            <input
+              type='range'
+              min='5'
+              max='85'
+              step='1'
+              disabled={composition.gridStyle === 'none'}
+              value={composition.gridOpacity}
+              onChange={(event) =>
+                onCompositionChange({
+                  gridOpacity: Number(event.target.value),
+                })
+              }
+            />
+            <output>{composition.gridOpacity}%</output>
+          </label>
+
+          <label className='cut-range'>
+            <span>Rot.</span>
+            <input
+              type='range'
+              min='-45'
+              max='45'
+              step='1'
+              disabled={composition.gridStyle === 'none'}
+              value={composition.gridRotation}
+              onChange={(event) =>
+                onCompositionChange({
+                  gridRotation: Number(event.target.value),
+                })
+              }
+            />
+            <output>{composition.gridRotation}°</output>
+          </label>
+        </div>
+
+        <p>
+          Structural overlays for modular, radial and asymmetric compositions.
+        </p>
+      </div>
+
+      <div className='cut-controls__section cut-controls__section--left'>
+        <span className='cut-controls__section-label'>
+          04 / Geometry
+        </span>
+
+        <div className='cut-control-group'>
+          <span className='cut-control-group__label'>
+            Form
           </span>
 
           <div className='cut-graphic-options'>
@@ -1506,7 +1664,7 @@ const CutControls = ({
 
         <div className='cut-control-group'>
           <span className='cut-control-group__label'>
-            Graphic color
+            Geometry color
           </span>
 
           <div className='cut-color-options'>
@@ -1628,57 +1786,94 @@ const CutControls = ({
         </label>
 
         <p>
-          Static graphic primitives. Motion remains typographic.
+          Graphic forms sit above the image and below the typography.
         </p>
       </div>
 
-      <div className='cut-controls__section'>
+      <div className='cut-controls__section cut-controls__section--right'>
         <span className='cut-controls__section-label'>
-          06 / Save
+          08 / Project
         </span>
 
-        <button
-          type='button'
-          className='cut-save-poster'
-          disabled={isExporting}
-          onClick={onSavePoster}
-        >
-          {isExporting
-            ? 'SAVING…'
-            : 'SAVE POSTER'}
-        </button>
-
-        <p>
-          {saveMessage ||
-            'Downloads the current poster as a high-resolution PNG.'}
-        </p>
-      </div>
-
-      <div className='cut-controls__section cut-controls__section--export'>
-        <span className='cut-controls__section-label'>
-          07 / Export format
-        </span>
-
-        <div className='cut-export'>
+        <div className='cut-project-actions'>
           <button
             type='button'
-            disabled={isExporting}
-            onClick={() => onExport('png')}
+            onClick={onSaveProject}
           >
-            PNG
+            SAVE PROJECT
           </button>
 
-          <button
-            type='button'
-            disabled={isExporting}
-            onClick={() => onExport('webp')}
-          >
-            WEBP
-          </button>
+          <label className='cut-project-load'>
+            <span>LOAD PROJECT</span>
+            <input
+              type='file'
+              accept='.json,.cut.json,application/json'
+              onChange={onLoadProject}
+            />
+          </label>
         </div>
 
         <p>
-          Exported locally. Nothing leaves your browser.
+          {saveMessage ||
+            'Saves the full composition, image, effects, grid, geometry and motion settings.'}
+        </p>
+      </div>
+
+      <div className='cut-controls__section cut-controls__section--right cut-controls__section--export'>
+        <span className='cut-controls__section-label'>
+          09 / Output
+        </span>
+
+        <div className='cut-output-group'>
+          <span className='cut-control-group__label'>Static</span>
+          <div className='cut-export'>
+            <button
+              type='button'
+              disabled={isExporting}
+              onClick={() => onExport('png')}
+            >
+              PNG
+            </button>
+
+            <button
+              type='button'
+              disabled={isExporting}
+              onClick={() => onExport('webp')}
+            >
+              WEBP
+            </button>
+          </div>
+        </div>
+
+        <div className='cut-output-group'>
+          <span className='cut-control-group__label'>Motion</span>
+          <div className='cut-export cut-export--motion'>
+            <button
+              type='button'
+              disabled
+              title='Animated export will be enabled by the motion export engine.'
+            >
+              GIF
+            </button>
+            <button
+              type='button'
+              disabled
+              title='Animated export will be enabled by the motion export engine.'
+            >
+              WEBM
+            </button>
+            <button
+              type='button'
+              disabled
+              title='Animated export will be enabled by the motion export engine.'
+            >
+              MP4
+            </button>
+          </div>
+        </div>
+
+        <p>
+          Static export works now. Motion formats are visible as the next output layer rather than being hidden from the workflow.
         </p>
       </div>
     </aside>

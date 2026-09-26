@@ -107,12 +107,28 @@ export type CutTypeColor =
   | 'green'
   | 'orange';
 
+export type CutGridStyle =
+  | 'none'
+  | 'modular'
+  | 'columns'
+  | 'twelve'
+  | 'asymmetric'
+  | 'diagonal'
+  | 'radial'
+  | 'golden';
+
 export type CutGraphicStyle =
   | 'none'
-  | 'grid'
-  | 'radial'
-  | 'bars'
-  | 'dots';
+  | 'line'
+  | 'block'
+  | 'circle'
+  | 'ring'
+  | 'arc'
+  | 'cross'
+  | 'frame'
+  | 'polygon'
+  | 'repeat'
+  | 'concentric';
 
 export type ExportFormat =
   | 'png'
@@ -155,6 +171,11 @@ export interface CutComposition {
   motionMode: CutMotionMode;
   motionStyle: CutMotionStyle;
   motionDuration: number;
+  gridStyle: CutGridStyle;
+  gridColor: CutTypeColor;
+  gridDensity: number;
+  gridOpacity: number;
+  gridRotation: number;
   graphicStyle: CutGraphicStyle;
   graphicColor: CutTypeColor;
   graphicDensity: number;

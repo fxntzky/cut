@@ -3,8 +3,9 @@
   min-height: 0;
   display: grid;
   grid-template-columns:
-    minmax(19rem, 24rem)
-    minmax(0, 1fr);
+    minmax(18rem, 20rem)
+    minmax(0, 1fr)
+    minmax(19rem, 21rem);
   overflow: hidden;
   background: var(--cut-paper);
   color: var(--cut-ink);
@@ -98,6 +99,37 @@
       color:
         var(--cut-muted);
     }
+  }
+}
+
+
+
+.cut-controls--right {
+  border-right: 0;
+  border-left:
+    1px solid
+    var(--cut-line);
+
+  .cut-controls__header h1 {
+    font-size:
+      clamp(
+        2.2rem,
+        3.4vw,
+        3.7rem
+      );
+    letter-spacing: -0.075em;
+  }
+}
+
+.cut-controls--left {
+  .cut-controls__section--right {
+    display: none;
+  }
+}
+
+.cut-controls--right {
+  .cut-controls__section--left {
+    display: none;
   }
 }
 
@@ -423,14 +455,23 @@
 .cut-range {
   display: grid;
   grid-template-columns:
-    1.2rem minmax(0, 1fr)
-    2.2rem;
+    minmax(4.6rem, 5.5rem)
+    minmax(4rem, 1fr)
+    minmax(2.4rem, auto);
   align-items: center;
   gap: 0.65rem;
 
   span,
   output {
+    min-width: 0;
     font-size: 0.68rem;
+    line-height: 1.15;
+  }
+
+  > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   output {
@@ -1274,7 +1315,7 @@
 }
 
 @media (
-  max-width: 960px
+  max-width: 1040px
 ) {
   .cut-editor {
     height: auto;
@@ -1289,7 +1330,14 @@
     min-height: auto;
     overflow: visible;
     border-right: 0;
+    border-left: 0;
     border-bottom:
+      1px solid
+      var(--cut-line);
+  }
+
+  .cut-controls--right {
+    border-top:
       1px solid
       var(--cut-line);
   }
@@ -1875,6 +1923,7 @@
 }
 
 .cut-subtitle-options,
+.cut-grid-options,
 .cut-graphic-options {
   display: grid;
   grid-template-columns:
@@ -2624,5 +2673,410 @@
 
   .cut-canvas__effect-image {
     filter: invert(1) grayscale(0.15) contrast(1.18);
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// V1.8 — ADVANCED GRID SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+.cut-grid-options {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+}
+
+.cut-graphic-options {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+}
+
+.cut-canvas__grid {
+  position: absolute;
+  inset: -8%;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--cut-grid-color);
+  opacity: var(--cut-grid-opacity);
+  transform:
+    rotate(var(--cut-grid-rotation));
+  transform-origin: center;
+  mix-blend-mode: multiply;
+}
+
+.cut-canvas--dark .cut-canvas__grid {
+  mix-blend-mode: screen;
+}
+
+.cut-canvas--grid-modular {
+  .cut-canvas__grid {
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        currentColor 0 1px,
+        transparent 1px var(--cut-grid-spacing)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        currentColor 0 1px,
+        transparent 1px var(--cut-grid-spacing)
+      );
+  }
+}
+
+.cut-canvas--grid-columns {
+  .cut-canvas__grid {
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        currentColor 0 1px,
+        transparent 1px calc(var(--cut-grid-spacing) * 1.35)
+      );
+  }
+}
+
+.cut-canvas--grid-twelve {
+  .cut-canvas__grid {
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        currentColor 0 1px,
+        transparent 1px 8.333333%
+      );
+  }
+}
+
+.cut-canvas--grid-asymmetric {
+  .cut-canvas__grid {
+    background:
+      linear-gradient(
+        to right,
+        transparent 0 37.8%,
+        currentColor 37.8% calc(37.8% + 1px),
+        transparent calc(37.8% + 1px) 64.5%,
+        currentColor 64.5% calc(64.5% + 1px),
+        transparent calc(64.5% + 1px)
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 0 28%,
+        currentColor 28% calc(28% + 1px),
+        transparent calc(28% + 1px) 72%,
+        currentColor 72% calc(72% + 1px),
+        transparent calc(72% + 1px)
+      );
+  }
+}
+
+.cut-canvas--grid-diagonal {
+  .cut-canvas__grid {
+    background:
+      repeating-linear-gradient(
+        45deg,
+        currentColor 0 1px,
+        transparent 1px var(--cut-grid-spacing)
+      );
+  }
+}
+
+.cut-canvas--grid-radial {
+  .cut-canvas__grid {
+    background:
+      repeating-radial-gradient(
+        circle at 50% 50%,
+        transparent 0 var(--cut-grid-spacing),
+        currentColor var(--cut-grid-spacing)
+          calc(var(--cut-grid-spacing) + 1px)
+      );
+  }
+}
+
+.cut-canvas--grid-golden {
+  .cut-canvas__grid {
+    background:
+      linear-gradient(
+        to right,
+        transparent 0 38.2%,
+        currentColor 38.2% calc(38.2% + 1px),
+        transparent calc(38.2% + 1px) 61.8%,
+        currentColor 61.8% calc(61.8% + 1px),
+        transparent calc(61.8% + 1px)
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 0 38.2%,
+        currentColor 38.2% calc(38.2% + 1px),
+        transparent calc(38.2% + 1px) 61.8%,
+        currentColor 61.8% calc(61.8% + 1px),
+        transparent calc(61.8% + 1px)
+      );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// V1.8 — GEOMETRY ENGINE
+// ─────────────────────────────────────────────────────────────
+
+.cut-canvas__graphic {
+  position: absolute;
+  inset: 7%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.72;
+  transform:
+    rotate(var(--cut-graphic-rotation))
+    scale(var(--cut-graphic-scale));
+  transform-origin: center;
+  color: var(--cut-graphic-color);
+}
+
+.cut-canvas--graphic-line {
+  .cut-canvas__graphic::before {
+    content: '';
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    top: 50%;
+    border-top: 2px solid currentColor;
+  }
+}
+
+.cut-canvas--graphic-block {
+  .cut-canvas__graphic::before {
+    content: '';
+    position: absolute;
+    width: 34%;
+    height: 66%;
+    right: 5%;
+    top: 17%;
+    background: currentColor;
+  }
+}
+
+.cut-canvas--graphic-circle,
+.cut-canvas--graphic-ring,
+.cut-canvas--graphic-arc {
+  .cut-canvas__graphic::before {
+    content: '';
+    position: absolute;
+    width: min(52cqw, 52cqh);
+    aspect-ratio: 1;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+  }
+}
+
+.cut-canvas--graphic-circle {
+  .cut-canvas__graphic::before {
+    background: currentColor;
+  }
+}
+
+.cut-canvas--graphic-ring {
+  .cut-canvas__graphic::before {
+    border: 2px solid currentColor;
+  }
+}
+
+.cut-canvas--graphic-arc {
+  .cut-canvas__graphic::before {
+    border: 3px solid currentColor;
+    border-left-color: transparent;
+    border-bottom-color: transparent;
+  }
+}
+
+.cut-canvas--graphic-cross {
+  .cut-canvas__graphic::before,
+  .cut-canvas__graphic::after {
+    content: '';
+    position: absolute;
+    background: currentColor;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .cut-canvas__graphic::before {
+    width: 78%;
+    height: 2px;
+  }
+
+  .cut-canvas__graphic::after {
+    width: 2px;
+    height: 78%;
+  }
+}
+
+.cut-canvas--graphic-frame {
+  .cut-canvas__graphic {
+    border: 2px solid currentColor;
+  }
+}
+
+.cut-canvas--graphic-polygon {
+  .cut-canvas__graphic::before {
+    content: '';
+    position: absolute;
+    width: 58%;
+    height: 68%;
+    left: 22%;
+    top: 14%;
+    background: currentColor;
+    clip-path:
+      polygon(
+        50% 0,
+        100% 24%,
+        84% 82%,
+        42% 100%,
+        0 68%,
+        12% 14%
+      );
+  }
+}
+
+.cut-canvas--graphic-repeat {
+  .cut-canvas__graphic {
+    background:
+      repeating-linear-gradient(
+        45deg,
+        currentColor 0 2px,
+        transparent 2px var(--cut-graphic-spacing)
+      );
+  }
+}
+
+.cut-canvas--graphic-concentric {
+  .cut-canvas__graphic {
+    border-radius: 50%;
+    background:
+      repeating-radial-gradient(
+        circle at center,
+        transparent 0 var(--cut-graphic-spacing),
+        currentColor var(--cut-graphic-spacing)
+          calc(var(--cut-graphic-spacing) + 2px)
+      );
+  }
+}
+
+
+// ─────────────────────────────────────────────
+// v1.8.1 — tool-panel legibility + project/output architecture
+// ─────────────────────────────────────────────
+
+.cut-controls--right .cut-range {
+  grid-template-columns:
+    minmax(4.9rem, 5.8rem)
+    minmax(4rem, 1fr)
+    minmax(2.5rem, auto);
+  gap: 0.55rem;
+}
+
+.cut-controls--left .cut-range {
+  grid-template-columns:
+    minmax(4.4rem, 5.2rem)
+    minmax(4rem, 1fr)
+    minmax(2.4rem, auto);
+  gap: 0.55rem;
+}
+
+.cut-grid-options {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  button {
+    min-height: 2.35rem;
+    padding-inline: 0.55rem;
+    font-size: 0.6rem;
+    white-space: nowrap;
+  }
+}
+
+.cut-graphic-options {
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  button {
+    min-height: 2.35rem;
+    font-size: 0.57rem;
+    white-space: nowrap;
+  }
+}
+
+.cut-project-actions {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+
+  > button,
+  .cut-project-load {
+    min-height: 2.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid var(--cut-ink);
+    background: transparent;
+    color: var(--cut-ink);
+    font: inherit;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  > button:hover,
+  .cut-project-load:hover {
+    background: var(--cut-ink);
+    color: var(--cut-paper);
+  }
+}
+
+.cut-project-load {
+  position: relative;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.cut-output-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.cut-export--motion {
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.32;
+  }
+}
+
+.cut-effect-card__range.cut-range {
+  grid-template-columns:
+    minmax(3.8rem, 4.5rem)
+    minmax(3.6rem, 1fr)
+    minmax(2.3rem, auto);
+}
+
+@media (max-width: 1380px) {
+  .cut-editor {
+    grid-template-columns:
+      minmax(17rem, 18.5rem)
+      minmax(0, 1fr)
+      minmax(18rem, 19.5rem);
   }
 }

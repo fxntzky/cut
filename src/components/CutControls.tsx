@@ -8,9 +8,16 @@ import {
   titleStyles,
 } from '../data/layouts';
 
+import {
+  createImageEffect,
+  imageEffectCatalog,
+} from '../data/imageEffects';
+
 import type {
   CutComposition,
   CutGraphicStyle,
+  CutImageEffect,
+  CutImageEffectType,
   CutImageLook,
   CutLayout,
   CutMotionMode,
@@ -29,6 +36,10 @@ import type {
 import type {
   ImagePanAvailability,
 } from './CutCanvas';
+
+import {
+  getCompositionLimits,
+} from '../utils/constraints';
 
 interface CutControlsProps {
   composition: CutComposition;
@@ -208,6 +219,60 @@ const CutControls = ({
       composition.title.length
     );
 
+  const limits =
+    getCompositionLimits(composition);
+
+  const updateImageEffect = (
+    id: string,
+    patch: Partial<CutImageEffect>
+  ) => {
+    onCompositionChange({
+      imageEffects: composition.imageEffects.map((effect) =>
+        effect.id === id
+          ? { ...effect, ...patch }
+          : effect
+      ),
+    });
+  };
+
+  const addImageEffect = (type: CutImageEffectType) => {
+    const id = `${type}-${Date.now()}-${composition.imageEffects.length}`;
+
+    onCompositionChange({
+      imageEffects: [
+        ...composition.imageEffects,
+        createImageEffect(type, id),
+      ].slice(-6),
+    });
+  };
+
+  const removeImageEffect = (id: string) => {
+    onCompositionChange({
+      imageEffects: composition.imageEffects.filter(
+        (effect) => effect.id !== id
+      ),
+    });
+  };
+
+  const moveImageEffect = (
+    index: number,
+    direction: -1 | 1
+  ) => {
+    const target = index + direction;
+
+    if (
+      target < 0 ||
+      target >= composition.imageEffects.length
+    ) {
+      return;
+    }
+
+    const next = [...composition.imageEffects];
+    [next[index], next[target]] = [next[target], next[index]];
+
+    onCompositionChange({ imageEffects: next });
+  };
+
   return (
     <aside className='cut-controls'>
       <header className='cut-controls__header'>
@@ -222,7 +287,7 @@ const CutControls = ({
         </div>
 
         <span className='cut-controls__version'>
-          V1.6.2
+          V1.7.0
         </span>
       </header>
 
@@ -397,8 +462,8 @@ const CutControls = ({
 
           <input
             type='range'
-            min='70'
-            max='130'
+            min={limits.titleScale.min}
+            max={limits.titleScale.max}
             step='1'
             value={composition.titleScale}
             onChange={(event) =>
@@ -446,8 +511,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='-8'
-              max='24'
+              min={limits.titleTracking.min}
+              max={limits.titleTracking.max}
               step='1'
               value={composition.titleTracking}
               onChange={(event) =>
@@ -468,8 +533,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='70'
-              max='130'
+              min={limits.titleLineHeight.min}
+              max={limits.titleLineHeight.max}
               step='1'
               value={composition.titleLineHeight}
               onChange={(event) =>
@@ -487,8 +552,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='40'
-              max='100'
+              min={limits.titleWidth.min}
+              max={limits.titleWidth.max}
               step='1'
               value={composition.titleWidth}
               onChange={(event) =>
@@ -630,8 +695,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='70'
-              max='140'
+              min={limits.subtitleScale.min}
+              max={limits.subtitleScale.max}
               step='1'
               value={composition.subtitleScale}
               onChange={(event) =>
@@ -649,8 +714,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='30'
-              max='100'
+              min={limits.subtitleWidth.min}
+              max={limits.subtitleWidth.max}
               step='1'
               value={composition.subtitleWidth}
               onChange={(event) =>
@@ -668,8 +733,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='-4'
-              max='20'
+              min={limits.subtitleTracking.min}
+              max={limits.subtitleTracking.max}
               step='1'
               value={composition.subtitleTracking}
               onChange={(event) =>
@@ -690,8 +755,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='90'
-              max='180'
+              min={limits.subtitleLineHeight.min}
+              max={limits.subtitleLineHeight.max}
               step='1'
               value={composition.subtitleLineHeight}
               onChange={(event) =>
@@ -709,8 +774,8 @@ const CutControls = ({
 
             <input
               type='range'
-              min='2'
-              max='6'
+              min={limits.subtitleMaxLines.min}
+              max={limits.subtitleMaxLines.max}
               step='1'
               value={composition.subtitleMaxLines}
               onChange={(event) =>
@@ -1102,6 +1167,161 @@ const CutControls = ({
           </label>
         )}
 
+        <div className='cut-control-group cut-effect-stack'>
+          <div className='cut-effect-stack__header'>
+            <span className='cut-control-group__label'>
+              Effect stack
+            </span>
+
+            <span>
+              {composition.imageEffects.length}/6
+            </span>
+          </div>
+
+          <div className='cut-effect-add'>
+            {imageEffectCatalog.map((effect) => (
+              <button
+                key={effect.id}
+                type='button'
+                disabled={composition.imageEffects.length >= 6}
+                title={effect.description}
+                onClick={() => addImageEffect(effect.id)}
+              >
+                + {effect.label}
+              </button>
+            ))}
+          </div>
+
+          {composition.imageEffects.length > 0 && (
+            <div className='cut-effect-list'>
+              {composition.imageEffects.map((effect, index) => {
+                const meta = imageEffectCatalog.find(
+                  (item) => item.id === effect.type
+                );
+
+                return (
+                  <div
+                    key={effect.id}
+                    className={`cut-effect-card ${
+                      effect.enabled ? '' : 'is-disabled'
+                    }`}
+                  >
+                    <div className='cut-effect-card__top'>
+                      <button
+                        type='button'
+                        className='cut-effect-card__toggle'
+                        aria-pressed={effect.enabled}
+                        onClick={() =>
+                          updateImageEffect(effect.id, {
+                            enabled: !effect.enabled,
+                          })
+                        }
+                      >
+                        {effect.enabled ? 'ON' : 'OFF'}
+                      </button>
+
+                      <strong>{meta?.label ?? effect.type}</strong>
+
+                      <div className='cut-effect-card__actions'>
+                        <button
+                          type='button'
+                          disabled={index === 0}
+                          aria-label='Move effect up'
+                          onClick={() => moveImageEffect(index, -1)}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type='button'
+                          disabled={index === composition.imageEffects.length - 1}
+                          aria-label='Move effect down'
+                          onClick={() => moveImageEffect(index, 1)}
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type='button'
+                          aria-label='Remove effect'
+                          onClick={() => removeImageEffect(effect.id)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+
+                    <label className='cut-range cut-effect-card__range'>
+                      <span>Amount</span>
+                      <input
+                        type='range'
+                        min='0'
+                        max='100'
+                        value={effect.amount}
+                        onChange={(event) =>
+                          updateImageEffect(effect.id, {
+                            amount: Number(event.target.value),
+                          })
+                        }
+                      />
+                      <output>{effect.amount}</output>
+                    </label>
+
+                    {(effect.type === 'halftone' ||
+                      effect.type === 'xerox' ||
+                      effect.type === 'chromatic' ||
+                      effect.type === 'scanlines' ||
+                      effect.type === 'grain') && (
+                      <label className='cut-range cut-effect-card__range'>
+                        <span>Scale</span>
+                        <input
+                          type='range'
+                          min='2'
+                          max='14'
+                          value={effect.scale}
+                          onChange={(event) =>
+                            updateImageEffect(effect.id, {
+                              scale: Number(event.target.value),
+                            })
+                          }
+                        />
+                        <output>{effect.scale}</output>
+                      </label>
+                    )}
+
+                    {effect.type === 'duotone' && (
+                      <div className='cut-effect-card__tones'>
+                        {typeColors
+                          .filter((color) => color.id !== 'auto')
+                          .map((color) => (
+                            <button
+                              key={color.id}
+                              type='button'
+                              className={
+                                effect.tone === color.id
+                                  ? 'is-active'
+                                  : undefined
+                              }
+                              title={color.label}
+                              aria-label={`Effect tone: ${color.label}`}
+                              onClick={() =>
+                                updateImageEffect(effect.id, {
+                                  tone: color.id,
+                                })
+                              }
+                            >
+                              <span
+                                style={{ background: color.swatch }}
+                              />
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <button
           type='button'
           className='cut-image-reset'
@@ -1114,6 +1334,7 @@ const CutControls = ({
               imageGrain: 0,
               imageThreshold: 52,
               imageHalftoneSize: 6,
+              imageEffects: [],
             })
           }
         >
@@ -1121,7 +1342,7 @@ const CutControls = ({
         </button>
 
         <p>
-          Static image treatment only. Motion remains typographic.
+          Base treatment + reorderable effect stack. Up to six passes.
         </p>
       </div>
 

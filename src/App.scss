@@ -2213,7 +2213,7 @@
 }
 
 // ─────────────────────────────────────────────
-// IMAGE ENGINE — V1.6.2
+// IMAGE ENGINE — V1.7.0
 // Static editorial processing. No image motion.
 // ─────────────────────────────────────────────
 
@@ -2352,5 +2352,277 @@
         0.78
       );
     mix-blend-mode: multiply;
+  }
+}
+
+
+// ─────────────────────────────────────────────
+// EFFECT STACK — V1.7.0 FOUNDATION
+// Reorderable non-destructive passes. Kept DOM/CSS based for now so
+// the renderer can later be swapped for WebGL without changing editor state.
+// ─────────────────────────────────────────────
+
+.cut-effect-stack {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cut-line);
+}
+
+.cut-effect-stack__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  > span:last-child {
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+    opacity: 0.48;
+  }
+}
+
+.cut-effect-add {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.28rem;
+
+  button {
+    min-height: 2rem;
+    padding: 0.4rem 0.48rem;
+    border: 1px solid var(--cut-line);
+    background: transparent;
+    color: var(--cut-ink);
+    font: inherit;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.035em;
+    text-align: left;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--cut-ink);
+      background: color-mix(in srgb, var(--cut-ink) 5%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.28;
+      cursor: default;
+    }
+  }
+}
+
+.cut-effect-list {
+  display: grid;
+  gap: 0.38rem;
+  margin-top: 0.55rem;
+}
+
+.cut-effect-card {
+  padding: 0.55rem;
+  border: 1px solid var(--cut-line-strong);
+  background: color-mix(in srgb, var(--cut-paper) 96%, var(--cut-ink));
+
+  &.is-disabled {
+    opacity: 0.48;
+  }
+}
+
+.cut-effect-card__top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+
+  strong {
+    overflow: hidden;
+    font-size: 0.55rem;
+    letter-spacing: 0.045em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+.cut-effect-card__toggle,
+.cut-effect-card__actions button {
+  min-width: 1.7rem;
+  height: 1.7rem;
+  padding: 0 0.32rem;
+  border: 1px solid var(--cut-line);
+  background: transparent;
+  color: var(--cut-ink);
+  font: inherit;
+  font-size: 0.5rem;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.2;
+    cursor: default;
+  }
+}
+
+.cut-effect-card__actions {
+  display: flex;
+  gap: 0.18rem;
+}
+
+.cut-effect-card__range {
+  margin-top: 0.48rem;
+}
+
+.cut-effect-card__tones {
+  display: flex;
+  gap: 0.28rem;
+  margin-top: 0.55rem;
+
+  button {
+    width: 1.45rem;
+    height: 1.45rem;
+    padding: 0.2rem;
+    border: 1px solid var(--cut-line);
+    background: transparent;
+    cursor: pointer;
+
+    &.is-active {
+      border-color: var(--cut-ink);
+    }
+
+    span {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+.cut-canvas__effect-stack,
+.cut-canvas__effect-layer,
+.cut-canvas__effect-image {
+  position: absolute;
+  inset: 0;
+}
+
+.cut-canvas__effect-stack {
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cut-canvas__effect-layer {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cut-canvas__effect-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--cut-image-x) var(--cut-image-y);
+  pointer-events: none;
+}
+
+.cut-canvas__effect-layer--duotone {
+  background: var(--cut-effect-tone);
+  opacity: calc(var(--cut-effect-amount) * 0.78);
+  mix-blend-mode: multiply;
+}
+
+.cut-canvas__effect-layer--posterize {
+  opacity: calc(var(--cut-effect-amount) * 0.78);
+  mix-blend-mode: hard-light;
+
+  .cut-canvas__effect-image {
+    filter: grayscale(1) contrast(3.8) brightness(1.03);
+  }
+}
+
+.cut-canvas__effect-layer--halftone {
+  background-image:
+    radial-gradient(
+      circle,
+      var(--canvas-fg) 0 28%,
+      transparent 31%
+    );
+  background-size:
+    var(--cut-effect-scale)
+    var(--cut-effect-scale);
+  opacity: calc(var(--cut-effect-amount) * 0.72);
+  mix-blend-mode: multiply;
+}
+
+.cut-canvas__effect-layer--xerox {
+  opacity: calc(var(--cut-effect-amount) * 0.9);
+  mix-blend-mode: multiply;
+
+  .cut-canvas__effect-image {
+    filter: grayscale(1) contrast(3.4) brightness(1.06);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0 calc(var(--cut-effect-scale) * 0.35),
+        color-mix(in srgb, var(--canvas-fg) 18%, transparent)
+          calc(var(--cut-effect-scale) * 0.35)
+          calc(var(--cut-effect-scale) * 0.55)
+      );
+  }
+}
+
+.cut-canvas__effect-layer--chromatic {
+  opacity: calc(var(--cut-effect-amount) * 0.82);
+  mix-blend-mode: screen;
+
+  .cut-canvas__effect-image {
+    transform: translateX(var(--cut-effect-scale));
+    filter: saturate(1.7) hue-rotate(145deg) contrast(1.08);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow:
+      calc(var(--cut-effect-scale) * -1) 0 0 rgba(255, 0, 90, 0.22) inset,
+      var(--cut-effect-scale) 0 0 rgba(0, 210, 255, 0.22) inset;
+    mix-blend-mode: screen;
+  }
+}
+
+.cut-canvas__effect-layer--scanlines {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 calc(var(--cut-effect-scale) * 0.5),
+      color-mix(in srgb, var(--canvas-fg) 34%, transparent)
+        calc(var(--cut-effect-scale) * 0.5)
+        var(--cut-effect-scale)
+    );
+  opacity: calc(var(--cut-effect-amount) * 0.62);
+  mix-blend-mode: multiply;
+}
+
+.cut-canvas__effect-layer--grain {
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.93' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.92'/%3E%3C/svg%3E");
+  background-size:
+    calc(110px + var(--cut-effect-scale) * 10)
+    calc(110px + var(--cut-effect-scale) * 10);
+  opacity: calc(var(--cut-effect-amount) * 0.64);
+  mix-blend-mode: soft-light;
+}
+
+.cut-canvas__effect-layer--invert {
+  opacity: calc(var(--cut-effect-amount) * 0.72);
+  mix-blend-mode: difference;
+
+  .cut-canvas__effect-image {
+    filter: invert(1) grayscale(0.15) contrast(1.18);
   }
 }

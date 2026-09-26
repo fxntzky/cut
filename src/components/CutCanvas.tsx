@@ -14,6 +14,7 @@ import type {
 
 import type {
   CutComposition,
+  CutImageEffect,
 } from '../types/cut';
 
 export interface ImagePanAvailability {
@@ -64,6 +65,21 @@ type WordStyle =
     '--cut-word-index': number;
   };
 
+type EffectLayerStyle =
+  CSSProperties & {
+    '--cut-effect-amount': string;
+    '--cut-effect-scale': string;
+    '--cut-effect-tone': string;
+  };
+
+const getEffectLayerStyle = (
+  effect: CutImageEffect
+): EffectLayerStyle => ({
+  '--cut-effect-amount': String(effect.amount / 100),
+  '--cut-effect-scale': `${effect.scale}px`,
+  '--cut-effect-tone': TYPE_COLORS[effect.tone],
+});
+
 const TYPE_COLORS = {
   auto: 'var(--canvas-fg)',
   yellow: '#d5b936',
@@ -90,7 +106,7 @@ const getImageFilter = (
   let saturation =
     composition.imageSaturation / 100;
   let grayscale = 0;
-  let sepia = 0;
+  const sepia = 0;
 
   switch (composition.imageLook) {
     case 'mono':
@@ -350,13 +366,6 @@ const CutCanvas =
             return;
           }
 
-          if (!composition.autoFitTitle) {
-            setFittedTitleScale(
-              requestedScale
-            );
-            return;
-          }
-
           const previousTransform =
             title.style.transform;
 
@@ -405,12 +414,17 @@ const CutCanvas =
             availableHeight /
             titleRect.height;
 
+          const safetyAllowance =
+            composition.autoFitTitle
+              ? 1
+              : 1.045;
+
           const safeScale = Math.max(
-            0.48,
+            0.44,
             Math.min(
               requestedScale,
-              widthScale,
-              heightScale
+              widthScale * safetyAllowance,
+              heightScale * safetyAllowance
             )
           );
 
@@ -558,6 +572,34 @@ const CutCanvas =
                     className='cut-canvas__image-effects'
                     aria-hidden='true'
                   />
+
+                  {composition.imageEffects.length > 0 && (
+                    <div
+                      className='cut-canvas__effect-stack'
+                      aria-hidden='true'
+                    >
+                      {composition.imageEffects
+                        .filter((effect) => effect.enabled)
+                        .map((effect) => (
+                          <div
+                            key={effect.id}
+                            className={`cut-canvas__effect-layer cut-canvas__effect-layer--${effect.type}`}
+                            style={getEffectLayerStyle(effect)}
+                          >
+                            {(effect.type === 'posterize' ||
+                              effect.type === 'xerox' ||
+                              effect.type === 'chromatic' ||
+                              effect.type === 'invert') && (
+                              <img
+                                src={imageSrc}
+                                alt=''
+                                className='cut-canvas__effect-image'
+                              />
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className='cut-canvas__placeholder'>

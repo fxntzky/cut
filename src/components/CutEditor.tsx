@@ -27,6 +27,10 @@ import {
   prepareImage,
 } from '../utils/prepareImage';
 
+import {
+  normalizeComposition,
+} from '../utils/constraints';
+
 import CutCanvas from './CutCanvas';
 
 import type {
@@ -131,6 +135,9 @@ const initialComposition: CutComposition = {
   imageHalftoneSize:
     6,
 
+  imageEffects:
+    [],
+
   motionMode:
     'static',
 
@@ -166,7 +173,9 @@ const CutEditor = () => {
     composition,
     setComposition,
   ] = useState<CutComposition>(
-    initialComposition
+    normalizeComposition(
+      initialComposition
+    )
   );
 
   const [
@@ -235,7 +244,7 @@ const CutEditor = () => {
             validLayouts[0];
         }
 
-        return candidate;
+        return normalizeComposition(candidate);
       }
     );
 
@@ -287,39 +296,40 @@ const CutEditor = () => {
 
   const handleRandomize = () => {
     setComposition(
-      (current) => ({
-        ...current,
+      (current) =>
+        normalizeComposition({
+          ...current,
 
-        layout:
-          getRandomLayout(
-            current.ratio,
-            current.title.length,
-            current.layout
-          ),
+          layout:
+            getRandomLayout(
+              current.ratio,
+              current.title.length,
+              current.layout
+            ),
 
-        titleStyle:
-          getRandomTitleStyle(
-            current.titleStyle
-          ),
+          titleStyle:
+            getRandomTitleStyle(
+              current.titleStyle
+            ),
 
-        imagePositionX:
-          Math.floor(
-            30 +
-              Math.random() * 41
-          ),
+          imagePositionX:
+            Math.floor(
+              30 +
+                Math.random() * 41
+            ),
 
-        imagePositionY:
-          Math.floor(
-            25 +
-              Math.random() * 51
-          ),
+          imagePositionY:
+            Math.floor(
+              25 +
+                Math.random() * 51
+            ),
 
-        titleScale:
-          Math.floor(
-            88 +
-              Math.random() * 25
-          ),
-      })
+          titleScale:
+            Math.floor(
+              88 +
+                Math.random() * 25
+            ),
+        })
     );
 
     setSaveMessage('');

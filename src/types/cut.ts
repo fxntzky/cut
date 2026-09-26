@@ -68,6 +68,25 @@ export type CutImageLook =
   | 'halftone'
   | 'xerox';
 
+export type CutImageEffectType =
+  | 'duotone'
+  | 'posterize'
+  | 'halftone'
+  | 'xerox'
+  | 'chromatic'
+  | 'scanlines'
+  | 'grain'
+  | 'invert';
+
+export interface CutImageEffect {
+  id: string;
+  type: CutImageEffectType;
+  enabled: boolean;
+  amount: number;
+  scale: number;
+  tone: CutTypeColor;
+}
+
 export type CutMotionMode =
   | 'static'
   | 'loop';
@@ -132,6 +151,7 @@ export interface CutComposition {
   imageTone: CutTypeColor;
   imageThreshold: number;
   imageHalftoneSize: number;
+  imageEffects: CutImageEffect[];
   motionMode: CutMotionMode;
   motionStyle: CutMotionStyle;
   motionDuration: number;
